@@ -1,18 +1,18 @@
 const express = require('express');
 const axios = require('axios');
-const cors = require('cors'); // Importar o pacote CORS
+const cors = require('cors');
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT;
 
 app.use(express.json());
-app.use(cors()); // Adicionar o middleware CORS
+app.use(cors());
 
 app.post('/postLoggedTime', async (req, res) => {
     const { apiKey, server, cards } = req.body;
 
     try {
         if (!apiKey || !server || !cards) {
-            return res.status(400).json({ message: 'Parâmetros inválidos' });
+            return res.status(400).json({ message: 'Invalid parameters' });
         }
 
         for (const cardBlock of cards) {
@@ -23,24 +23,24 @@ app.post('/postLoggedTime', async (req, res) => {
                 }
             });
 
-            console.log('Resposta do servidor destino:', response.data);
+            console.log('Response of destiny server:', response.data);
         }
 
-        res.json({ message: 'Solicitações enviadas com sucesso para todos os blocos de cartas' });
+        res.json({ message: 'Sucssessful requests!' });
     } catch (error) {
         if (error.response) {
-            console.error('Erro no servidor destino:', error.response.data);
+            console.error('Error from destiny server: ', error.response.data);
             res.status(error.response.status).json({ message: error.response.data });
         } else if (error.request) {
-            console.error('Sem resposta do servidor destino:', error.request);
+            console.error('No response from destiny server: ', error.request);
             res.status(500).json({ message: 'Sem resposta do servidor destino' });
         } else {
-            console.error('Erro ao processar a solicitação:', error.message);
+            console.error('Error processing the request: ', error.message);
             res.status(500).json({ message: 'Erro ao processar a solicitação' });
         }
     }
 });
 
 app.listen(port, () => {
-    console.log(`Servidor rodando na porta ${port}`);
+    console.log(`Server start at ${port}`);
 });
