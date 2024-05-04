@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT
 
 app.use(express.json()); // Middleware para permitir o uso de req.body com JSON
 
@@ -15,16 +15,22 @@ app.post('/postLoggedTime', async (req, res) => {
             return res.status(400).json({ message: 'Parâmetros inválidos' });
         }
 
-        // Fazer solicitação para o servidor destino
-        const response = await axios.post(server, cards, {
-            headers: {
-                'apikey': apiKey,
-                'Content-Type': 'application/json'
-            }
-        });
+        // Iterar sobre cada bloco de cartas
+        for (const cardBlock of cards) {
+            // Fazer solicitação para o servidor destino para cada bloco de cartas
+            const response = await axios.post(server, cardBlock, {
+                headers: {
+                    'apikey': apiKey,
+                    'Content-Type': 'application/json'
+                }
+            });
 
-        // Retornar a resposta do servidor destino
-        res.json(response.data);
+            // Registrar a resposta para cada bloco de cartas
+            console.log('Resposta do servidor destino:', response.data);
+        }
+
+        // Retornar uma mensagem de sucesso após o envio de todas as solicitações
+        res.json({ message: 'Solicitações enviadas com sucesso para todos os blocos de cartas' });
     } catch (error) {
         // Verificar se o erro é uma resposta do servidor destino
         if (error.response) {
