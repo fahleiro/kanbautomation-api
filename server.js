@@ -1,43 +1,41 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const axios = require('axios'); // Importe o axios para fazer requisições HTTP
+const axios = require('axios');
 const app = express();
-const port = process.env.PORT;
+const port = process.env.PORT
 
-app.use(bodyParser.json());
+// Middleware para autenticar usando apiKey
+const authenticateWithApiKey = (req, res, next) => {
+    const apiKey = req.headers['apikey']; // Supondo que você esteja enviando a apiKey no cabeçalho 'apikey'
 
-// Endpoint para aceitar o post em /postLoggedTime
-app.post('/postLoggedTime', (req, res) => {
-    const { apiKey, server, cards, postEndpoint } = req.body; // Extrair apiKey, server, cards e postEndpoint do corpo da requisição
-    
-    // Verificar se todos os parâmetros necessários foram fornecidos
-    if (!apiKey || !server || !cards || !postEndpoint) {
-        return res.status(400).json({ message: 'Parâmetros inválidos' });
+    // Verificar se a apiKey está presente no cabeçalho
+    if (!apiKey) {
+        return res.status(401).json({ message: 'apiKey não fornecida' });
     }
 
-    // Montar os dados para o novo post
-    const postData = {
-        server: server,
-        cards: cards
-    };
+    // Adicionar a apiKey ao corpo da solicitação
+    req.body.apiKey = apiKey;
+    next();
+};
 
-    // Configurar os cabeçalhos da requisição com a apiKey
-    const headers = {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-    };
+// Endpoint para receber a solicitação e repassar para o Kanbanize
+app.post('/kanbanizeEndpoint', authenticateWithApiKey, async (req, res) => {
+    const { apiKey, server, cards } = req.body;
 
-    // Fazer um novo post para o outro endpoint, incluindo os cabeçalhos configurados
-    axios.post(postEndpoint, postData, { headers })
-        .then(response => {
-            // Se a requisição for bem-sucedida, retornar uma resposta de sucesso
-            res.json({ message: 'Dados enviados com sucesso' });
-        })
-        .catch(error => {
-            // Se ocorrer um erro, retornar uma mensagem de erro
-            console.error('Erro ao enviar dados:', error);
-            res.status(500).json({ message: 'Erro ao enviar dados' });
+    try {
+        // Fazer solicitação para o endpoint no Kanbanize
+        const response = await axios.post(server, cards, {
+            headers: {
+                'apikey': apiKey,
+                'Content-Type': 'application/json'
+            }
         });
+
+        // Retornar a resposta do Kanbanize
+        res.json(response.data);
+    } catch (error) {
+        console.error('Erro ao enviar solicitação para o Kanbanize:', error);
+        res.status(500).json({ message: 'Erro ao enviar solicitação para o Kanbanize' });
+    }
 });
 
 app.listen(port, () => {
